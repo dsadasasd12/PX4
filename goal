@@ -1,0 +1,89 @@
+PX4 是一款开源的无人机飞行控制软件，其源码结构复杂但模块化清晰，适合深入学习无人机控制、传感器融合、路径规划等关键技术。以下是学习 PX4 源码的重点方向和步骤：
+
+1. 源码结构与核心模块
+PX4 源码仓库：https://github.com/PX4/PX4-Autopilot
+核心目录：
+src/modules：核心飞行控制模块，包括传感器驱动、状态估计、控制器等。
+  mcattcontrol / mcposcontrol：多旋翼姿态和位置控制器。
+  ekf2：扩展卡尔曼滤波器（状态估计）。
+  sensors：传感器数据处理（IMU、磁力计、GPS等）。
+  navigator：任务规划和导航逻辑。
+src/drivers：硬件驱动（IMU、GPS、PWM输出等）。
+msg：定义所有模块间通信的消息格式（基于uORB协议）。
+ROMFS/px4fmu_common：启动脚本和默认配置文件。
+
+2. 核心学习方向
+(1) 传感器驱动与数据融合
+IMU 数据处理：src/drivers/imu 中的驱动实现，数据校准（calibration 模块）。
+EKF2 状态估计：src/modules/ekf2，学习如何融合 IMU、GPS、气压计等数据，输出姿态、位置和速度。
+uORB 通信机制：消息发布-订阅模型，跨模块数据传输的关键（如 sensor_combined 消息）。
+
+(2) 控制算法
+姿态控制：mcattcontrol 中的 PID 或级联 PID 实现。
+位置控制：mcposcontrol 中的位置环和速度环控制逻辑。
+混合器（Mixer）：src/lib/mixer，将控制指令转换为电机/舵机输出。
+
+(3) 任务规划与导航
+Mission 模式：navigator 模块解析和执行航点任务。
+避障与路径规划：结合 local_planner 或外部算法（如 ROS 的 MoveBase）。
+
+(4) 通信协议
+MAVLink 协议：src/modules/mavlink，与地面站（如 QGC）通信。
+UAVCAN 总线：用于分布式传感器和执行器通信。
+
+3. 学习路径建议
+(1) 先决知识
+C++ 基础（PX4 主要使用 C++ 和少量 C）。
+无人机基本原理（姿态表示、PID 控制、坐标系变换）。
+熟悉 Linux 开发环境和 Git。
+
+(2) 入门步骤
+1 阅读文档：
+   官方文档：https://docs.px4.io/main/en/
+   开发者指南：https://dev.px4.io/master/en/
+2 搭建开发环境：
+   使用 Docker 或 Ubuntu 安装 PX4 工具链。
+   编译固件：make px4fmu-v5default（根据硬件选择）。
+3 仿真调试：
+   使用 Gazebo 或 JMAVSim 运行仿真：make px4_sitl gazebo。
+   通过 QGroundControl 监控飞行状态。
+4 代码调试：
+   使用 GDB 或 IDE（如 VS Code）调试模块。
+   打印日志：PX4INFO 或 PX4DEBUG。
+
+(3) 深入实践
+修改控制器参数：调整 PID 增益（MCROLLP 等参数），观察仿真效果。
+添加新驱动：在 src/drivers 中实现新传感器驱动。
+自定义模块：通过 uORB 订阅/发布消息，编写新功能模块。
+参与开源贡献：修复 Issue 或提交 Pull Request。
+
+4. 关键代码示例
+(1) 姿态控制（mcattcontrol）
+// 计算姿态误差（四元数差）
+Quatf qerror = attitudesetpointq * vehicleattitude_q.inversed();
+q_error.normalize();
+
+// 转换为欧拉角误差
+Vector3f ratesetpoint = qerror.rotate(ratesetpoint);
+
+(2) EKF2 状态更新
+// GPS 数据融合
+if (gpsdataready) {
+    ekf->setGpsData(gpstime, gps_sample);
+}
+// 预测步骤
+_ekf->predict();
+
+5. 工具与资源
+仿真工具：Gazebo、AirSim、QGroundControl。
+调试工具：uorb top（查看消息频率）、param show（查看参数）。
+社区支持：
+  PX4 Slack 频道：https://px4.slack.com
+  GitHub Issues 和 Discussions：https://github.com/PX4/PX4-Autopilot/discussions
+
+6. 进阶方向
+硬件在环（HITL）：连接真实飞控测试代码。
+ROS 2 集成：使用 px4roscom 实现无人机与 ROS 的通信。
+机器学习：在 PX4 中嵌入 AI 模型（如端到端控制）。
+
+通过以上步骤，你可以逐步掌握 PX4 的核心逻辑，并具备定制化开发能力。建议从仿真入手，逐步深入具体模块，结合实践验证理论。
