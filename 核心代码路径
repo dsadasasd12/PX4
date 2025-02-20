@@ -1,0 +1,3 @@
+EKF2模块路径：Firmware/src/modules/ekf2
+核心算法库：Firmware/src/lib/ecl/EKF（关键数学实现）
+主入口文件：ekf2_main.cpp
