@@ -1,0 +1,24 @@
+void Kalman_o(KAM *ka,float delta_tim,float meas)
+{
+  
+  //1.计算先验估计。
+  ka->angle = ka->angle - ka->bias*delta_tim + ka->angle*delta_tim;
+  ka->bias = ka->bias;
+  //2.计算预测协方差矩阵
+  ka->p[0][0] = ka->p[0][0] + ka->Q_angle - (ka->p[0][1] - ka->p[1][0])*delta_tim + ka->p[1][1]*delta_tim*delta_tim;
+  ka->p[0][1] = ka->p[0][1] - ka->p[1][1] * delta_tim;
+  ka->p[1][0] = ka->p[1][0] - ka->p[1][1] * delta_tim;
+  ka->p[1][1] = ka->p[1][0] + ka->Q_gyro;
+  //3.建立测量方程
+  ka->newangle = meas;
+  //4.计算卡尔曼增益
+  ka->K0 = ka->p[0][0] / ka->p[0][0] + ka->R_angle;    // 
+  //5.计算当前最优估计值
+  ka->angle = ka->angle + ka->K0*(ka->newangle - ka->angle);
+  ka->bias = ka->bias + ka->K1*(ka->newangle - ka->angle);
+  //6.更新协方差矩阵
+  ka->p[0][0] = ka->p[0][0] - ka->p[0][0] * ka->K0;
+  ka->p[0][1] = ka->p[0][1] - ka->p[0][1] * ka->K0;
+  ka->p[1][0] = ka->p[1][0] - ka->p[1][0] * ka->K1;
+  ka->p[1][1] = ka->p[1][1] - ka->p[1][1] * ka->K1;
+}
