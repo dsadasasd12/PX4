@@ -1,0 +1,28 @@
+1. EKF2 核心代码路径
+路径: PX4-Autopilot/src/modules/ekf2
+
+核心文件：
+ekf2_main.cpp: EKF2 模块的主入口，负责初始化、传感器订阅和算法调度。
+estimator_interface.h/cpp: 传感器数据接口，处理传感器输入（IMU、GPS、气压计等）的预处理和时间同步。
+ekf.cpp: EKF 算法的核心实现，包括预测（Predict）和更新（Update）步骤。
+control.cpp: 控制滤波器重置、状态切换和故障检测。
+utils: 包含协方差初始化、数学工具等辅助函数。
+数学库：
+
+ecl: PX4 的数学库，位于 PX4-Autopilot/src/lib/ecl，包含矩阵运算、EKF 的数学工具（如 EKF/ekf_helper.cpp）。
+2. 参数配置
+EKF2 参数定义:
+在 PX4-Autopilot/src/modules/ekf2/params/ 中定义了 EKF2 的可调参数，如：
+EKF2_* 参数（例如 EKF2_GPS_POS_X 传感器偏移校准）。
+通过 QGroundControl 或命令行调整参数，观察对状态估计的影响。
+3. 文档与理论参考
+PX4 官方文档:
+EKF2 算法概述: 参数说明和调试指南。
+传感器融合逻辑: 传感器标定与对齐。
+论文与教程:
+推荐阅读《Quaternion Kinematics for the Error-State Kalman Filter》（Joan Solà 的经典论文）。
+4. 调试与日志分析
+日志工具:
+使用 Flight Review 分析 ekf2_innovations 和 estimator_status 日志，观察滤波器收敛性、残差和协方差。
+仿真测试:
+在 SITL 仿真中修改传感器噪声（PX4-Autopilot/Tools/simulation/gazebo/sitl_gazebo/models/），测试 EKF 的鲁棒性。
