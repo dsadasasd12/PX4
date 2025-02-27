@@ -1,0 +1,68 @@
+TRV（Constant Turn Rate and Velocity）模型是一种常用于目标跟踪的非线性运动模型。以下是一个简化的C语言实现示例，包含关键结构和状态预测逻辑：
+
+#include <math.h>
+#include <stdio.h>
+
+// 状态向量维度 (x, y, v, ψ, ψ_dot)
+#define STATE_DIM 5
+
+typedef struct {
+    double data[STATE_DIM];    // 状态向量 [x, y, v, ψ, ψ_dot]
+    double dt;                 // 时间步长 (秒)
+    double Q[STATE_DIM][STATE_DIM]; // 过程噪声协方差矩阵
+} CTRV_State;
+
+// 状态转移函数
+void ctrv_predict(CTRV_State* state) {
+    // 解包状态变量
+    double x = state->data[0];
+    double y = state->data[1];
+    double v = state->data[2];
+    double psi = state->data[3];
+    double psi_dot = state->data[4];
+    double dt = state->dt;
+
+    // 处理零转弯率的特殊情况
+    if (fabs(psi_dot) < 1e-5) {
+        // 直线运动模型
+        state->data[0] = x + v * cos(psi) * dt;
+        state->data[1] = y + v * sin(psi) * dt;
+    } else {
+        // 曲线运动模型
+        double delta_psi = psi_dot * dt;
+        state->data[0] = x + (v/psi_dot) * (sin(psi + delta_psi) - sin(psi));
+        state->data[1] = y + (v/psi_dot) * (cos(psi) - cos(psi + delta_psi));
+    }
+    
+    // 更新航向角
+    state->data[3] = psi + psi_dot * dt;
+    
+    // 保持角度在 [-π, π] 范围内
+    while (state->data[3] > M_PI) state->data[3] -= 2*M_PI;
+    while (state->data[3] < -M_PI) state->data[3] += 2*M_PI;
+
+    // 注意：这里需要添加过程噪声和协方差矩阵更新
+}
+
+int main() {
+    CTRV_State state = {
+        .data = {0.0, 0.0, 5.0, M_PI/4, M_PI/6}, // 初始状态
+        .dt = 0.1
+    };
+
+    // 执行预测
+    ctrv_predict(&state);
+
+    printf("Predicted state:\n");
+    printf("x: %.2f, y: %.2f\n", state.data[0], state.data[1]);
+    printf("v: %.2f, psi: %.2f, psi_dot: %.2f\n", 
+           state.data[2], state.data[3], state.data[4]);
+
+    return 0;
+}
+关键点说明：
+
+状态向量：包含位置(x,y)、速度(v)、航向角(ψ)和转弯率(ψ_dot)
+状态转移：
+直线运动（当转弯率接近0时使用简化模型）
+曲线运动（使用三角函数解析解）
