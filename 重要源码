@@ -1,0 +1,39 @@
+1. 状态估计算法核心代码
+PX4的组合导航主要依赖扩展卡尔曼滤波（EKF2）实现，以下文件是核心：
+
+src/modules/ekf2 目录
+
+ekf2_main.cpp: EKF2模块的主入口，负责初始化、参数加载和主循环。
+EKF/ekf.h 和 EKF/ekf.cpp: EKF算法的核心实现，包含预测（IMU积分）和更新（传感器数据融合）流程。
+EKF/control.cpp: 控制滤波器的重置、状态初始化等逻辑。
+EKF/estimator_interface.cpp: 定义传感器数据的接口和预处理（如时间同步、有效性检查）。
+src/modules/estimator_base
+
+estimator_base.cpp: 状态估计器的基类，EKF2等算法继承自此类。
+2. 传感器驱动与数据处理
+组合导航依赖多传感器数据（IMU、GPS、磁力计、气压计等），需关注：
+
+IMU数据处理
+
+src/modules/sensors/vehicle_imu：IMU数据的采集、校正和发布（通过uORB消息sensor_imu）。
+src/lib/sensor_calibration: IMU校准相关代码。
+GPS数据处理
+
+src/modules/sensors/vehicle_gps_position: GPS数据的解析和发布（uORB消息vehicle_gps_position）。
+其他传感器
+
+磁力计（vehicle_magnetometer）、气压计（vehicle_air_data）、视觉/光学流（vehicle_optical_flow）等模块。
+3. 参数配置与调优
+EKF2的性能高度依赖参数配置，需重点关注：
+
+参数文件
+
+ROMFS/px4fmu_common/init.d/rc.ekf2: EKF2启动脚本和默认参数。
+src/modules/ekf2/EKF/params.c: EKF参数定义（如噪声协方差、传感器权重）。
+关键参数
+
+EKF2_* 系列参数（如EKF2_GPS_CTRL, EKF2_MAG_TYPE），用于控制传感器融合策略。
+4. 状态输出与接口
+uORB消息
+vehicle_local_position（局部坐标系下的估计位置）、vehicle_global_position（全球坐标系）、vehicle_attitude（姿态）等，这些是组合导航的输出结果。
+消息定义文件位于 msg/ 目录下。
